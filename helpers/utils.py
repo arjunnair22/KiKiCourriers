@@ -19,3 +19,14 @@ def make_package(package_weight, package_id, distance, offer_code):
         "distance_in_km":distance,
         "offer_code":offer_code
     }
+
+
+def find_smallest_package_larger_than(weight, package_list):
+    smallest_package = None
+    for package in package_list:
+        if package.weight >= weight:
+            smallest_package = package
+            break
+    return smallest_package
+
+
