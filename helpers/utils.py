@@ -1,4 +1,4 @@
-from bisect import bisect
+import bisect
 from functools import reduce
 
 from Model.Packages import Packages
@@ -56,7 +56,7 @@ def compose(*funcs):
 
 def add_back_to_pending_list(store):
     def add(package):
-        return store.packages.insert(0, package)
+        bisect.insort(store["packages"], package)
     return add
 
 

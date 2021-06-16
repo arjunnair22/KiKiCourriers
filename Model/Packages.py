@@ -9,4 +9,4 @@ class Packages(object):
     offer_code:str
 
     def __lt__(self, other):
-        return self.package_weight < other.get('package_weight', 0)
+        return self.package_weight < other.package_weight
