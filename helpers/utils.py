@@ -137,9 +137,14 @@ def add_to_scheduled_and_update_weight(package: Packages):
         optimize_scheduled_packages(package)
 
 
-def calculate_discount(package):
-    pass
+def calculate_discount(package:Packages):
+    # @Todo :  implement the logic
+    return 0
 
 
-def calculate_total_cost(package):
-    pass
+def calculate_delivery_cost(package:Packages):
+    return KikiStore.get("base_delivery_cost") + package.package_weight * 10 + package.distance * 5
+
+
+def calculate_total_cost(package:Packages):
+    return calculate_delivery_cost(package) + calculate_discount(package)

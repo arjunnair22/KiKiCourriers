@@ -21,6 +21,7 @@ KikiStore = {
     "vehicle_count": 0,
     "load": 0,
     "speed": 0,
+    "base_delivery_cost":0,
     "vehicle": {
         "total_weight": 0,
         "packages_scheduled": [],
