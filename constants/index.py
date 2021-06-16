@@ -16,3 +16,5 @@ offer_code = {
     }
 }
 
+KikiStore = {"packages": []}
+

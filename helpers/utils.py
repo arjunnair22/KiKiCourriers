@@ -1,18 +1,11 @@
 import bisect
 from functools import reduce
-
+from constants.index import KikiStore
 from Model.Packages import Packages
 
 
 def less_than(self, other):
     return self.prop < other.prop
-
-
-def sort(package_list: list):
-    def package_list_key(package):
-        return package.weight
-
-    return sorted(package_list, key=package_list_key)
 
 
 def make_vehicle(vehicle_id, max_speed, max_carriable_weight):
@@ -60,6 +53,27 @@ def add_back_to_pending_list(store):
     return add
 
 
-KikiStore = {"packages": []}
+def get_smallest_delay(delays):
+    pass
+
+
+def count_greater_than(value):
+    def is_greater(iterable):
+        return len(iterable) > value
+    return is_greater
+
+
+def is_scheduled_for_delivery(package):
+    return not package.scheduled
+
+
+def schedule(package):
+    pass
+
+
+def try_schedule(packages):
+    for package in packages:
+        schedule(package)
+
 
 compose(add_back_to_pending_list(KikiStore), update_package_in_vehicle, find_smallest_package_larger_than)
