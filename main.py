@@ -26,6 +26,7 @@ def schedule_delivery(packages):
 if __name__ == '__main__':
 
     # get list of packages and arrange in sorted order
+    # schedule delivery of packages
 
     print_hi('PyCharm')
 

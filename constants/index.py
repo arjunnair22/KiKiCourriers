@@ -16,5 +16,16 @@ offer_code = {
     }
 }
 
-KikiStore = {"packages": []}
+KikiStore = {
+    "packages": [],
+    "vehicle_count": 0,
+    "load": 0,
+    "speed": 0,
+    "vehicle": {
+    "total_weight": 0,
+    "packages_scheduled": []
+    }
+
+}
+
 
