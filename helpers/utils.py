@@ -1,6 +1,13 @@
 from bisect import bisect
 from functools import reduce
 
+from Model.Packages import Packages
+
+
+def less_than(self, other):
+    return self.prop < other.prop
+
+
 def sort(package_list: list):
     def package_list_key(package):
         return package.weight
@@ -17,13 +24,8 @@ def make_vehicle(vehicle_id, max_speed, max_carriable_weight):
     }
 
 
-def make_package(package_weight, package_id, distance, offer_code):
-    return {
-        "package_weight": package_weight,
-        "package_id": package_id,
-        "distance_in_km": distance,
-        "offer_code": offer_code
-    }
+def make_package( package_id, package_weight, distance, offer_code):
+    return Packages(package_id, package_weight, distance, offer_code)
 
 
 def find_smallest_package_larger_than(weight, vehicle):
@@ -42,7 +44,7 @@ def get_new_package_list(package, vehicle):
 def update_package_in_vehicle(data):
     index, vehicle, package = data
     temp = vehicle.packages[index]
-    vehicle.packages[index] = package
+    vehicle.packages.append(package)
     return temp, vehicle
 
 
