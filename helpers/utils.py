@@ -16,7 +16,7 @@ def make_package(package_id, package_weight, distance, offer_code):
 def find_smallest_package_larger_than(weight, vehicle):
     smallest_package = (None, None, None)
     for index, package in enumerate(vehicle.packages):
-        if package.weight >= weight:
+        if package.package_weight >= weight:
             smallest_package = (index, vehicle, package)
             break
     return smallest_package
@@ -28,9 +28,11 @@ def get_new_package_list(package, vehicle):
 
 def update_package_in_vehicle(data):
     index, vehicle, package = data
+    if index is None or vehicle is None or package is None:
+        return None
     temp = vehicle.packages[index]
     vehicle.packages.append(package)
-    return temp, vehicle
+    return temp
 
 
 def compose(*funcs):
@@ -42,8 +44,9 @@ def compose(*funcs):
 
 def add_back_to_pending_list(store):
     def add(package):
+        if package is None:
+            return None
         bisect.insort(store["packages"], package)
-
     return add
 
 
@@ -62,7 +65,7 @@ def is_scheduled_for_delivery(package):
     return not package.scheduled
 
 
-def schedule(iteration, package):
+def schedule(iteration, package: Packages):
     # compose function which doesnt require delay calculation
     # compose function which requires delay calculation
     pass
@@ -86,25 +89,29 @@ def will_require_waiting(iteration):
     return iteration > KikiStore.get("vehicle_count")
 
 
-def can_add_without_replacement(package, schedule_package):
-    pass
+def can_add_without_replacement(package: Packages):
+    return package.package_weight <= KikiStore.get("load") - KikiStore.get("vehicle").get("total_weight")
 
 
-def add_to_scheduled_packages(package):
+def add_to_scheduled_packages(package: Packages):
     KikiStore["vehicle"]["packages_scheduled"].append(package)
 
 
-def update_total_weightof_scheduled_packages(package):
+def update_total_weight_of_scheduled_packages(package: Packages):
     KikiStore["vehicle"]["total_weight"] += package.package_weight
 
 
-def add_to_scheduled_update_weight(package):
-    add_to_scheduled_packages(package)
-    update_total_weightof_scheduled_packages(package)
+def get_weight_difference(package: Packages):
+    return package.package_weight - (KikiStore.get("load") - KikiStore.get("vehicle").get("packages_scheduled"))
 
 
-compose(add_back_to_pending_list(KikiStore), update_package_in_vehicle, find_smallest_package_larger_than)
+optimize_scheduled_packages = compose(add_back_to_pending_list(KikiStore), update_package_in_vehicle,
+                                      find_smallest_package_larger_than, get_weight_difference)
 
 
-#doesnt require waiting
-# check if
+def add_to_scheduled_and_update_weight(package: Packages):
+    if can_add_without_replacement(package):
+        add_to_scheduled_packages(package)
+        update_total_weight_of_scheduled_packages(package)
+    else:
+        optimize_scheduled_packages(package)

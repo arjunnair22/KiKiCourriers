@@ -22,10 +22,8 @@ KikiStore = {
     "load": 0,
     "speed": 0,
     "vehicle": {
-    "total_weight": 0,
-    "packages_scheduled": []
+        "total_weight": 0,
+        "packages_scheduled": []
     }
 
 }
-
-
