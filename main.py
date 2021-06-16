@@ -15,9 +15,10 @@ def print_hi(name):
 def schedule_delivery(packages):
     count_greater_than_zero = count_greater_than(0)
     while True:
+        iteration = 1
         unscheduled_packages = filter(is_scheduled_for_delivery, packages)
         if count_greater_than_zero(unscheduled_packages):
-            try_schedule(unscheduled_packages)
+            try_schedule(iteration, unscheduled_packages)
         else:
             break
 

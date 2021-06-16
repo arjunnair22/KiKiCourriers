@@ -47,6 +47,7 @@ def add_back_to_pending_list(store):
         if package is None:
             return None
         bisect.insort(store["packages"], package)
+
     return add
 
 
@@ -65,15 +66,31 @@ def is_scheduled_for_delivery(package):
     return not package.scheduled
 
 
-def schedule(iteration, package: Packages):
-    # compose function which doesnt require delay calculation
-    # compose function which requires delay calculation
-    pass
+def schedule(package: Packages):
+    add_to_scheduled_and_update_weight(package)
 
 
-def try_schedule(packages):
-    for index, package in enumerate(packages):
-        schedule(index + 1, package)
+def add_waiting_time(time_in_hours):
+    try:
+        waiting_time = KikiStore.get("vehicle").get("delays")[0]
+        return time_in_hours + waiting_time
+    except:
+        return time_in_hours
+
+
+def try_schedule(iteration, packages):
+    for package in packages:
+        schedule(package)
+    reduce(find_return_time, KikiStore.get("vehicle").get("packages"), 0)
+
+
+def find_return_time(accumulator, package: Packages):
+    time = calculate_time(package)
+    return time if time >= accumulator else accumulator
+
+
+def calculate_time(package: Packages):
+    return round(package.distance / KikiStore.get("speed"), 2)
 
 
 def update_main_store_config(load, speed, vehicle_count):
