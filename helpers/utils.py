@@ -81,12 +81,15 @@ def add_waiting_time(time_in_hours):
 def try_schedule(iteration, packages):
     for package in packages:
         schedule(package)
-    reduce(find_return_time, KikiStore.get("vehicle").get("packages"), 0)
+    max_time = reduce(find_max_return_time, KikiStore.get("vehicle").get("packages_scheduled"))
+    bisect.insort(KikiStore.get("vehicle").get("delays"), max_time)
+    for package in KikiStore.get("vehicle").get("packages_scheduled"):
+        time_in_hours = (calculate_time if will_require_waiting(iteration) else compose(add_waiting_time, calculate_time))(package)
+        print(package.package_id, 0, 0, time_in_hours)
 
 
-def find_return_time(accumulator, package: Packages):
-    time = calculate_time(package)
-    return time if time >= accumulator else accumulator
+def find_max_return_time(pkg1:Packages, pkg2: Packages):
+    return max(calculate_time(pkg2), calculate_time(pkg1))
 
 
 def calculate_time(package: Packages):
@@ -119,7 +122,7 @@ def update_total_weight_of_scheduled_packages(package: Packages):
 
 
 def get_weight_difference(package: Packages):
-    return package.package_weight - (KikiStore.get("load") - KikiStore.get("vehicle").get("packages_scheduled"))
+    return package.package_weight - (KikiStore.get("load") - KikiStore.get("vehicle").get("total_weight"))
 
 
 optimize_scheduled_packages = compose(add_back_to_pending_list(KikiStore), update_package_in_vehicle,
@@ -132,3 +135,11 @@ def add_to_scheduled_and_update_weight(package: Packages):
         update_total_weight_of_scheduled_packages(package)
     else:
         optimize_scheduled_packages(package)
+
+
+def calculate_discount(package):
+    pass
+
+
+def calculate_total_cost(package):
+    pass
