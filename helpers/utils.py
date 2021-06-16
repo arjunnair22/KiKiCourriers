@@ -1,3 +1,4 @@
+from bisect import bisect
 from functools import reduce
 
 def sort(package_list: list):
@@ -25,23 +26,24 @@ def make_package(package_weight, package_id, distance, offer_code):
     }
 
 
-def find_smallest_package_larger_than(weight, package_list):
-    smallest_package = (None, None)
-    for index, package in enumerate(package_list):
+def find_smallest_package_larger_than(weight, vehicle):
+    smallest_package = (None, None, None)
+    for index, package in enumerate(vehicle.packages):
         if package.weight >= weight:
-            smallest_package = (index, package)
+            smallest_package = (index, vehicle, package)
             break
     return smallest_package
 
 
-def get_updated_package_for_vehicle(package, vehicle):
+def get_new_package_list(package, vehicle):
     return vehicle.packages + [package]
 
 
-def update_package_in_vehicle(package, vehicle, index):
+def update_package_in_vehicle(data):
+    index, vehicle, package = data
     temp = vehicle.packages[index]
     vehicle.packages[index] = package
-    return temp
+    return temp, vehicle
 
 
 def compose(*funcs):
@@ -50,4 +52,12 @@ def compose(*funcs):
     return reduce(composed_function, funcs, lambda x:x)
 
 
-compose(get_updated_package_for_vehicle, update_package_in_vehicle,find_smallest_package_larger_than)
+def add_back_to_pending_list(store):
+    def add(package):
+        return store.packages.insert(0, package)
+    return add
+
+
+KikiStore = {"packages": []}
+
+compose(add_back_to_pending_list(KikiStore), update_package_in_vehicle, find_smallest_package_larger_than)
