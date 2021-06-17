@@ -1,6 +1,6 @@
 import bisect
 from functools import reduce
-from constants.index import KikiStore
+from constants.index import KikiStore, offer_code
 
 from Model.Packages import Packages
 
@@ -137,14 +137,20 @@ def add_to_scheduled_and_update_weight(package: Packages):
         optimize_scheduled_packages(package)
 
 
-def calculate_discount(package:Packages):
-    # @Todo :  implement the logic
-    return 0
+def calculate_discount(package:Packages, delivery_cost):
+    try:
+        offer = offer_code[package.offer_code]
+        if offer.get("weight")[0] <= package.package_weight <= offer.get("weight")[1]:
+            if offer.get("distance")[0] <= package.distance <=  offer.get("distance")[1]:
+                return round(delivery_cost * (offer.get("discount_percent")/100), 2)
+    except:
+        return 0
 
 
 def calculate_delivery_cost(package:Packages):
-    return KikiStore.get("base_delivery_cost") + package.package_weight * 10 + package.distance * 5
+    return round (KikiStore.get("base_delivery_cost") + (package.package_weight * 10) + (package.distance * 5),2)
 
 
 def calculate_total_cost(package:Packages):
-    return calculate_delivery_cost(package) + calculate_discount(package)
+    delivery_cost = calculate_delivery_cost(package)
+    return delivery_cost - calculate_discount(package, delivery_cost)
