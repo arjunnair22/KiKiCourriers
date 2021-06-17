@@ -92,18 +92,26 @@ def add_waiting_time(time_in_hours):
         return time_in_hours
 
 
-def try_schedule(iteration, packages):
+def try_schedule(packages):
     for package in packages:
         schedule(package)
-    max_time = reduce(find_max_return_time, KikiStore.get("vehicle").get("packages_scheduled"))
+    calculate_waiting_period_of_scheduled_vehicle()
+
+
+
+def calculate_waiting_period_of_scheduled_vehicle():
+    max_time = reduce(find_max_return_time_of_vehicle, KikiStore.get("vehicle").get("packages_scheduled"))
     bisect.insort(KikiStore.get("vehicle").get("delays"), max_time)
+
+
+def print_output_for_scheduled_packages(iteration):
     for package in KikiStore.get("vehicle").get("packages_scheduled"):
         time_in_hours = (
             calculate_time if will_require_waiting(iteration) else compose(add_waiting_time, calculate_time))(package)
         print(package.package_id, 0, 0, time_in_hours)
 
 
-def find_max_return_time(pkg1: Packages, pkg2: Packages):
+def find_max_return_time_of_vehicle(pkg1: Packages, pkg2: Packages):
     return max(calculate_time(pkg2), calculate_time(pkg1))
 
 

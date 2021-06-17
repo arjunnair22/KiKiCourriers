@@ -4,7 +4,8 @@
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 import itertools
 
-from helpers.utils import count_greater_than, is_scheduled_for_delivery, try_schedule
+from helpers.utils import count_greater_than, is_scheduled_for_delivery, try_schedule, \
+    print_output_for_scheduled_packages
 
 
 def print_hi(name):
@@ -18,7 +19,9 @@ def schedule_delivery(packages):
         iteration = 1
         unscheduled_packages = filter(is_scheduled_for_delivery, packages)
         if count_greater_than_zero(unscheduled_packages):
-            try_schedule(iteration, unscheduled_packages)
+            try_schedule(unscheduled_packages)
+            print_output_for_scheduled_packages(iteration)
+            iteration += 1
         else:
             break
 
