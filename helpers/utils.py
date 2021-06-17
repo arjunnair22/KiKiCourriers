@@ -5,19 +5,16 @@ from constants.index import KikiStore, offer_code
 from Model.Packages import Packages
 
 
-def less_than(self, other):
-    return self.prop < other.prop
+def make_package(package_id, package_weight, distance, package_offer_code):
+    return Packages(package_id, package_weight, distance, package_offer_code)
 
 
-def make_package(package_id, package_weight, distance, offer_code):
-    return Packages(package_id, package_weight, distance, offer_code)
-
-
-def find_smallest_package_larger_than(weight, vehicle):
-    smallest_package = (None, None, None)
-    for index, package in enumerate(vehicle.packages):
-        if package.package_weight >= weight:
-            smallest_package = (index, vehicle, package)
+def find_smallest_package_larger_than(package_info):
+    package, weight = package_info
+    smallest_package = None, None
+    for index, s_package in enumerate(KikiStore.get("vehicle").get("packages_scheduled")):
+        if s_package.package_weight >= weight:
+            smallest_package = index, package
             break
     return smallest_package
 
@@ -26,12 +23,32 @@ def get_new_package_list(package, vehicle):
     return vehicle.packages + [package]
 
 
+def condition_for_replacing_package(replacement_candidate: Packages, new_package: Packages):
+    return replacement_candidate.distance > new_package.distance
+
+
+def is_same_weight_package(replacement_candidate: Packages, new_package: Packages):
+    return replacement_candidate.package_weight == new_package.package_weight
+
+
 def update_package_in_vehicle(data):
-    index, vehicle, package = data
-    if index is None or vehicle is None or package is None:
+    index, package = data
+    if index is None or package is None:
         return None
-    temp = vehicle.packages[index]
-    vehicle.packages.append(package)
+    scheduled_packages = KikiStore.get("vehicle").get("packages_scheduled")
+    replacement_candidate: Packages = scheduled_packages[index]
+
+    if not is_same_weight_package(replacement_candidate, package) or \
+            condition_for_replacing_package(replacement_candidate, package):
+        return update_and_return_replaced_package(index, package, scheduled_packages)
+
+    return None
+
+
+def update_and_return_replaced_package(index, package, scheduled_packages):
+    temp: Packages = scheduled_packages.pop(index)
+    KikiStore.get("vehicle").get("packages_scheduled").append(package)
+    update_total_weight_of_scheduled_packages(package.package_weight - temp.package_weight)
     return temp
 
 
@@ -43,16 +60,13 @@ def compose(*funcs):
 
 
 def add_back_to_pending_list(store):
-    def add(package):
+    def add(package: Packages):
         if package is None:
             return None
         bisect.insort(store["packages"], package)
+        return True
 
     return add
-
-
-def get_smallest_delay(delays):
-    pass
 
 
 def count_greater_than(value):
@@ -84,11 +98,12 @@ def try_schedule(iteration, packages):
     max_time = reduce(find_max_return_time, KikiStore.get("vehicle").get("packages_scheduled"))
     bisect.insort(KikiStore.get("vehicle").get("delays"), max_time)
     for package in KikiStore.get("vehicle").get("packages_scheduled"):
-        time_in_hours = (calculate_time if will_require_waiting(iteration) else compose(add_waiting_time, calculate_time))(package)
+        time_in_hours = (
+            calculate_time if will_require_waiting(iteration) else compose(add_waiting_time, calculate_time))(package)
         print(package.package_id, 0, 0, time_in_hours)
 
 
-def find_max_return_time(pkg1:Packages, pkg2: Packages):
+def find_max_return_time(pkg1: Packages, pkg2: Packages):
     return max(calculate_time(pkg2), calculate_time(pkg1))
 
 
@@ -97,12 +112,9 @@ def calculate_time(package: Packages):
 
 
 def update_main_store_config(load, speed, vehicle_count):
-    return {
-        **KikiStore,
-        "load": load,
-        "speed": speed,
-        "vehicle_count": vehicle_count
-    }
+    KikiStore["load"] = load
+    KikiStore["speed"] = speed
+    KikiStore["vehicle_count"] = vehicle_count
 
 
 def will_require_waiting(iteration):
@@ -117,40 +129,41 @@ def add_to_scheduled_packages(package: Packages):
     KikiStore["vehicle"]["packages_scheduled"].append(package)
 
 
-def update_total_weight_of_scheduled_packages(package: Packages):
-    KikiStore["vehicle"]["total_weight"] += package.package_weight
+def update_total_weight_of_scheduled_packages(package_weight):
+    KikiStore["vehicle"]["total_weight"] += package_weight
 
 
 def get_weight_difference(package: Packages):
-    return package.package_weight - (KikiStore.get("load") - KikiStore.get("vehicle").get("total_weight"))
+    return package, package.package_weight - (KikiStore.get("load") - KikiStore.get("vehicle").get("total_weight"))
 
 
-optimize_scheduled_packages = compose(add_back_to_pending_list(KikiStore), update_package_in_vehicle,
+optimize_scheduled_packages = compose(add_back_to_pending_list(KikiStore),
+                                      update_package_in_vehicle,
                                       find_smallest_package_larger_than, get_weight_difference)
 
 
 def add_to_scheduled_and_update_weight(package: Packages):
     if can_add_without_replacement(package):
         add_to_scheduled_packages(package)
-        update_total_weight_of_scheduled_packages(package)
+        update_total_weight_of_scheduled_packages(package.package_weight)
     else:
         optimize_scheduled_packages(package)
 
 
-def calculate_discount(package:Packages, delivery_cost):
+def calculate_discount(package: Packages, delivery_cost):
     try:
         offer = offer_code[package.offer_code]
         if offer.get("weight")[0] <= package.package_weight <= offer.get("weight")[1]:
-            if offer.get("distance")[0] <= package.distance <=  offer.get("distance")[1]:
-                return round(delivery_cost * (offer.get("discount_percent")/100), 2)
+            if offer.get("distance")[0] <= package.distance <= offer.get("distance")[1]:
+                return round(delivery_cost * (offer.get("discount_percent") / 100), 2)
     except:
         return 0
 
 
-def calculate_delivery_cost(package:Packages):
-    return round (KikiStore.get("base_delivery_cost") + (package.package_weight * 10) + (package.distance * 5),2)
+def calculate_delivery_cost(package: Packages):
+    return round(KikiStore.get("base_delivery_cost") + (package.package_weight * 10) + (package.distance * 5), 2)
 
 
-def calculate_total_cost(package:Packages):
+def calculate_total_cost(package: Packages):
     delivery_cost = calculate_delivery_cost(package)
     return delivery_cost - calculate_discount(package, delivery_cost)
