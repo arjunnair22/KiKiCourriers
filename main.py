@@ -5,12 +5,7 @@
 import itertools
 
 from helpers.utils import count_greater_than, is_scheduled_for_delivery, try_schedule, \
-    print_output_for_scheduled_packages
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+    print_output_for_scheduled_packages, reset_scheduled_packages
 
 
 def schedule_delivery(packages):
@@ -21,6 +16,7 @@ def schedule_delivery(packages):
         if count_greater_than_zero(unscheduled_packages):
             try_schedule(unscheduled_packages)
             print_output_for_scheduled_packages(iteration)
+            reset_scheduled_packages()
             iteration += 1
         else:
             break
@@ -32,6 +28,6 @@ if __name__ == '__main__':
     # get list of packages and arrange in sorted order
     # schedule delivery of packages
 
-    print_hi('PyCharm')
+    pass
 
 

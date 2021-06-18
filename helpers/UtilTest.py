@@ -70,6 +70,8 @@ class UtilTest(unittest.TestCase):
         weight = self.vehicle.get("total_weight")
         self.assertEqual(len(scheduled), 4)
         self.assertEqual(weight, 200)
+        for p in scheduled:
+            self.assertTrue(p.is_scheduled)
 
     def test_delivery_optimized_for_early_delivery(self):
         add_to_scheduled_and_update_weight(make_package('PKG1', 150, 10, 'OFR001'))
@@ -79,7 +81,8 @@ class UtilTest(unittest.TestCase):
         self.assertEqual(len(scheduled), 1)
         self.assertEqual(weight, 150)
         self.assertEqual(scheduled[0].distance, 10)
-
+        for p in scheduled:
+            self.assertTrue(p.is_scheduled)
 
 
 if __name__ == '__main__':

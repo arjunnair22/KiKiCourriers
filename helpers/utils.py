@@ -45,9 +45,10 @@ def update_package_in_vehicle(data):
     return None
 
 
-def update_and_return_replaced_package(index, package, scheduled_packages):
+def update_and_return_replaced_package(index, package: Packages, scheduled_packages):
     temp: Packages = scheduled_packages.pop(index)
-    KikiStore.get("vehicle").get("packages_scheduled").append(package)
+    add_to_scheduled_packages(package)
+
     update_total_weight_of_scheduled_packages(package.package_weight - temp.package_weight)
     return temp
 
@@ -64,6 +65,7 @@ def add_back_to_pending_list(store):
         if package is None:
             return None
         bisect.insort(store["packages"], package)
+        package.is_scheduled = False
         return True
 
     return add
@@ -86,7 +88,8 @@ def schedule(package: Packages):
 
 def add_waiting_time(time_in_hours):
     try:
-        waiting_time = KikiStore.get("vehicle").get("delays")[0]
+        waiting_time = KikiStore.get("vehicle").get("delays").pop(0)
+        bisect.insort(KikiStore.get("vehicle").get("delays"), time_in_hours + waiting_time)
         return time_in_hours + waiting_time
     except:
         return time_in_hours
@@ -98,7 +101,6 @@ def try_schedule(packages):
     calculate_waiting_period_of_scheduled_vehicle()
 
 
-
 def calculate_waiting_period_of_scheduled_vehicle():
     max_time = reduce(find_max_return_time_of_vehicle, KikiStore.get("vehicle").get("packages_scheduled"))
     bisect.insort(KikiStore.get("vehicle").get("delays"), max_time)
@@ -108,7 +110,8 @@ def print_output_for_scheduled_packages(iteration):
     for package in KikiStore.get("vehicle").get("packages_scheduled"):
         time_in_hours = (
             calculate_time if will_require_waiting(iteration) else compose(add_waiting_time, calculate_time))(package)
-        print(package.package_id, 0, 0, time_in_hours)
+        print(package.package_id, calculate_discount(package, calculate_delivery_cost(package)),
+              calculate_total_cost(package), time_in_hours)
 
 
 def find_max_return_time_of_vehicle(pkg1: Packages, pkg2: Packages):
@@ -135,6 +138,7 @@ def can_add_without_replacement(package: Packages):
 
 def add_to_scheduled_packages(package: Packages):
     KikiStore["vehicle"]["packages_scheduled"].append(package)
+    package.is_scheduled = True
 
 
 def update_total_weight_of_scheduled_packages(package_weight):
@@ -175,3 +179,8 @@ def calculate_delivery_cost(package: Packages):
 def calculate_total_cost(package: Packages):
     delivery_cost = calculate_delivery_cost(package)
     return delivery_cost - calculate_discount(package, delivery_cost)
+
+
+def reset_scheduled_packages():
+    KikiStore.get("vehicle").get("packages_scheduled").clear()
+    KikiStore.get("vehicle")["total_weight"] = 0
