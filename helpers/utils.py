@@ -1,4 +1,5 @@
 import bisect
+import sys
 from functools import reduce
 from constants.index import KikiStore, offer_code
 
@@ -102,7 +103,8 @@ def try_schedule(packages):
 
 
 def calculate_waiting_period_of_scheduled_vehicle():
-    max_time = reduce(find_max_return_time_of_vehicle, KikiStore.get("vehicle").get("packages_scheduled"))
+    max_time = reduce(find_max_return_time_of_vehicle, KikiStore.get("vehicle").get("packages_scheduled"),
+                      make_package(None,0, 0, ''))
     bisect.insort(KikiStore.get("vehicle").get("delays"), max_time)
 
 

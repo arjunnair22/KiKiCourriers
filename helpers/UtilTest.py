@@ -2,7 +2,7 @@ import unittest
 
 from constants.index import KikiStore
 from utils import add_back_to_pending_list, calculate_total_cost, update_main_store_config, \
-    add_to_scheduled_and_update_weight
+    add_to_scheduled_and_update_weight, calculate_waiting_period_of_scheduled_vehicle
 
 from helpers.utils import  make_package
 
@@ -83,6 +83,23 @@ class UtilTest(unittest.TestCase):
         self.assertEqual(scheduled[0].distance, 10)
         for p in scheduled:
             self.assertTrue(p.is_scheduled)
+
+    def test_whether_vehicle_return_time_calculated_correct(self):
+        add_to_scheduled_and_update_weight(make_package('PKG1', 150, 10, 'OFR001'))
+        add_to_scheduled_and_update_weight(make_package('PKG1', 150, 30, 'OFR001'))
+        calculate_waiting_period_of_scheduled_vehicle()
+        expected_delay = round(10/KikiStore.get("speed"),2)
+        self.assertEqual(KikiStore.get("vehicle").get("delays")[0], expected_delay)
+
+    def test_calculated_time_matches_with_multiple_scheduled_packages(self):
+        add_to_scheduled_and_update_weight(make_package('PKG1', 150, 10, 'OFR001'))
+        add_to_scheduled_and_update_weight(make_package('PKG1', 20, 50, 'OFR001'))
+        add_to_scheduled_and_update_weight(make_package('PKG1', 20, 30, 'OFR001'))
+        calculate_waiting_period_of_scheduled_vehicle()
+        expected_delay = round(50/KikiStore.get("speed"),2)
+        self.assertEqual(KikiStore.get("vehicle").get("delays")[0], expected_delay)
+
+
 
 
 if __name__ == '__main__':
