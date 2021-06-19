@@ -1,5 +1,4 @@
 import bisect
-import sys
 from functools import reduce
 from constants.index import KikiStore, offer_code
 
@@ -7,7 +6,7 @@ from Model.Packages import Packages
 
 
 def make_package(package_id, package_weight, distance, package_offer_code):
-    return Packages(package_id, package_weight, distance, package_offer_code)
+    return Packages(package_id, package_weight, distance, package_offer_code, calculate_time(distance))
 
 
 def find_smallest_package_larger_than(package_info):
@@ -65,7 +64,6 @@ def add_back_to_pending_list(store):
     def add(package: Packages):
         if package is None:
             return None
-        bisect.insort(store["packages"], package)
         package.is_scheduled = False
         return True
 
@@ -80,7 +78,7 @@ def count_greater_than(value):
 
 
 def is_scheduled_for_delivery(package):
-    return not package.scheduled
+    return not package.is_scheduled
 
 
 def schedule(package: Packages):
@@ -103,25 +101,20 @@ def try_schedule(packages):
 
 
 def calculate_waiting_period_of_scheduled_vehicle():
-    max_time = reduce(find_max_return_time_of_vehicle, KikiStore.get("vehicle").get("packages_scheduled"),
-                      make_package(None,0, 0, ''))
-    bisect.insort(KikiStore.get("vehicle").get("delays"), max_time)
+    package = max(KikiStore.get("vehicle").get("packages_scheduled"), key=lambda x: x.time_for_delivery)
+    bisect.insort(KikiStore.get("vehicle").get("delays"), package.time_for_delivery)
 
 
 def print_output_for_scheduled_packages(iteration):
     for package in KikiStore.get("vehicle").get("packages_scheduled"):
-        time_in_hours = (
-            calculate_time if will_require_waiting(iteration) else compose(add_waiting_time, calculate_time))(package)
+        time_in_hours = package.time_for_delivery if will_require_waiting(iteration) \
+            else add_waiting_time(package.time_for_delivery)
         print(package.package_id, calculate_discount(package, calculate_delivery_cost(package)),
               calculate_total_cost(package), time_in_hours)
 
 
-def find_max_return_time_of_vehicle(pkg1: Packages, pkg2: Packages):
-    return max(calculate_time(pkg2), calculate_time(pkg1))
-
-
-def calculate_time(package: Packages):
-    return round(package.distance / KikiStore.get("speed"), 2)
+def calculate_time(distance: int):
+    return round(distance / KikiStore.get("speed"), 2)
 
 
 def update_main_store_config(load, speed, vehicle_count):
@@ -131,7 +124,7 @@ def update_main_store_config(load, speed, vehicle_count):
 
 
 def will_require_waiting(iteration):
-    return iteration > KikiStore.get("vehicle_count")
+    return iteration <= KikiStore.get("vehicle_count")
 
 
 def can_add_without_replacement(package: Packages):
@@ -170,6 +163,7 @@ def calculate_discount(package: Packages, delivery_cost):
         if offer.get("weight")[0] <= package.package_weight <= offer.get("weight")[1]:
             if offer.get("distance")[0] <= package.distance <= offer.get("distance")[1]:
                 return round(delivery_cost * (offer.get("discount_percent") / 100), 2)
+        return 0
     except:
         return 0
 
@@ -186,3 +180,7 @@ def calculate_total_cost(package: Packages):
 def reset_scheduled_packages():
     KikiStore.get("vehicle").get("packages_scheduled").clear()
     KikiStore.get("vehicle")["total_weight"] = 0
+
+
+def save_for_delivery(package: Packages):
+    bisect.insort(KikiStore.get("packages"), package)

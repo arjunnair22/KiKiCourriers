@@ -2,7 +2,8 @@ import unittest
 
 from constants.index import KikiStore
 from utils import add_back_to_pending_list, calculate_total_cost, update_main_store_config, \
-    add_to_scheduled_and_update_weight, calculate_waiting_period_of_scheduled_vehicle
+    add_to_scheduled_and_update_weight, calculate_waiting_period_of_scheduled_vehicle, try_schedule, \
+    reset_scheduled_packages
 
 from helpers.utils import  make_package
 
@@ -21,6 +22,12 @@ class UtilTest(unittest.TestCase):
             make_package('PKG4', 90, 60, 'OFR001'),
             make_package('PKG5', 155, 95, 'OFR001'),
         ]
+        self.pack1 = make_package('PKG1', 50, 30, 'OFR001')
+        self.pack2 = make_package('PKG2', 75, 125, 'OFR001')
+        self.pack3 = make_package('PKG3', 175, 100, 'OFR001')
+        self.pack4 = make_package('PKG4', 110, 60, 'OFR001')
+        self.pack5 = make_package('PKG5', 155, 95, 'OFR001')
+        self.multiple_iters = [self.pack1, self.pack2, self.pack3, self.pack4, self.pack5]
         self.vehicle = KikiStore.get("vehicle")
         self.vehicle["packages_scheduled"] = []
         self.vehicle["total_weight"] = 0
@@ -98,6 +105,45 @@ class UtilTest(unittest.TestCase):
         calculate_waiting_period_of_scheduled_vehicle()
         expected_delay = round(50/KikiStore.get("speed"),2)
         self.assertEqual(KikiStore.get("vehicle").get("delays")[0], expected_delay)
+
+    def test_scheduling_with_one_package(self):
+        pack1 = make_package('PKG1', 150, 10, 'OFR001')
+        packages = [pack1]
+        try_schedule(packages)
+        scheduled = KikiStore.get("vehicle").get("packages_scheduled")
+        self.assertEqual(len(scheduled), 1)
+        self.assertIs(scheduled[0], pack1)
+
+    def test_scheduling_with_multiple_package(self):
+        pack1 = make_package('PKG1', 50, 30, 'OFR001')
+        pack2 = make_package('PKG2', 75, 125, 'OFR001')
+        pack3 = make_package('PKG3', 175, 100, 'OFR001')
+        pack4 = make_package('PKG4', 110, 60, 'OFR001')
+        pack5 = make_package('PKG5', 155, 95, 'OFR001')
+        packages = sorted([pack1, pack2, pack3, pack4, pack5], key=lambda x: x.package_weight)
+        KikiStore["packages"] = packages
+        try_schedule(packages)
+        scheduled = KikiStore.get("vehicle").get("packages_scheduled")
+        self.assertEqual(len(scheduled), 2)
+        self.assertIn(pack2, scheduled)
+        self.assertIn(pack4, scheduled)
+
+    def test_scheduling_with_multiple_package_multiple_iters(self):
+        packages = sorted(self.multiple_iters, key=lambda x: x.package_weight)
+        KikiStore["packages"] = packages
+        try_schedule(packages)
+        scheduled = KikiStore.get("vehicle").get("packages_scheduled")
+        self.assertEqual(len(scheduled), 2)
+        self.assertIn(self.pack2, scheduled)
+        self.assertIn(self.pack4, scheduled)
+        reset_scheduled_packages()
+        next_packages = sorted([self.pack1, self.pack3, self.pack5], key=lambda x: x.package_weight)
+        try_schedule(next_packages)
+        self.assertEqual(len(scheduled), 1)
+        self.assertIn(self.pack3, scheduled)
+
+
+
 
 
 
