@@ -1,13 +1,10 @@
-# This is a sample Python script.
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-import itertools
 
 from constants.index import KikiStore
-from helpers.utils import count_greater_than, is_scheduled_for_delivery, try_schedule, \
-    print_output_for_scheduled_packages, reset_scheduled_packages, make_package, save_for_delivery, \
+from helpers.utils import count_greater_than, make_package, \
     update_main_store_config
+from Scheduler import reset_scheduled_packages, try_schedule, is_scheduled_for_delivery, save_for_delivery, \
+    print_output_for_scheduled_packages
 
 
 def schedule_delivery():

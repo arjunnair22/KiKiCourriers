@@ -1,11 +1,10 @@
 import unittest
 
 from constants.index import KikiStore
-from utils import add_back_to_pending_list, calculate_total_cost, update_main_store_config, \
-    add_to_scheduled_and_update_weight, calculate_waiting_period_of_scheduled_vehicle, try_schedule, \
-    reset_scheduled_packages
-
-from helpers.utils import  make_package
+from utils import update_main_store_config
+from Vehicle import calculate_total_cost
+from Scheduler import reset_scheduled_packages, add_to_scheduled_and_update_weight, try_schedule, \
+    add_back_to_pending_list, calculate_waiting_period_of_scheduled_vehicle, make_package
 
 
 class UtilTest(unittest.TestCase):
@@ -39,7 +38,7 @@ class UtilTest(unittest.TestCase):
     def test_if_packages_maintain_a_sorted_order(self):
         package = make_package('PKG5', 60, 95, 'OFR001')
         add_back_to_pending_list(self.MainStore)(package)
-        self.assertIs(self.MainStore["packages"][1], package)
+        self.assertEqual(False, package.is_scheduled)
 
     def test_if_calculate_total_cost_works(self):
         package = make_package('PKG5', 110, 60, 'OFR002')
@@ -56,10 +55,10 @@ class UtilTest(unittest.TestCase):
                          self.MainStore["packages"][1].package_weight)
 
     def test_delivery_optimized_for_maximum_weight(self):
-        add_to_scheduled_and_update_weight(self.MainStore["packages"][0])
-        add_to_scheduled_and_update_weight(self.MainStore["packages"][2])
-        add_to_scheduled_and_update_weight(self.MainStore["packages"][3])
-        add_to_scheduled_and_update_weight(self.MainStore["packages"][4])
+        add_to_scheduled_and_update_weight(self.MainStore["packages"][0]) # 50
+        add_to_scheduled_and_update_weight(self.MainStore["packages"][2]) # 75
+        add_to_scheduled_and_update_weight(self.MainStore["packages"][3]) # 80
+        add_to_scheduled_and_update_weight(self.MainStore["packages"][4]) # 85
         scheduled = self.vehicle.get("packages_scheduled")
         weight = self.vehicle.get("total_weight")
         self.assertEqual(len(scheduled), 2)
@@ -68,15 +67,20 @@ class UtilTest(unittest.TestCase):
 
     def test_delivery_optimized_for_maximum_count_packages(self):
         add_to_scheduled_and_update_weight(make_package('PKG1', 50, 30, 'OFR001'))
-        add_to_scheduled_and_update_weight(make_package('PKG1', 50, 30, 'OFR001'))
-        add_to_scheduled_and_update_weight(make_package('PKG1', 50, 30, 'OFR001'))
-        add_to_scheduled_and_update_weight(make_package('PKG1', 50, 30, 'OFR001'))
-        add_to_scheduled_and_update_weight(make_package('PKG1', 100, 30, 'OFR001'))
-        add_to_scheduled_and_update_weight(make_package('PKG1', 100, 30, 'OFR001'))
+        add_to_scheduled_and_update_weight(make_package('PKG2', 50, 30, 'OFR001'))
+        add_to_scheduled_and_update_weight(make_package('PKG3', 50, 30, 'OFR001'))
+        add_to_scheduled_and_update_weight(make_package('PKG4', 200, 30, 'OFR001'))
+        add_to_scheduled_and_update_weight(make_package('PKG5', 200, 30, 'OFR001'))
         scheduled = self.vehicle.get("packages_scheduled")
         weight = self.vehicle.get("total_weight")
-        self.assertEqual(len(scheduled), 4)
-        self.assertEqual(weight, 200)
+        self.assertEqual(len(scheduled), 3)
+        self.assertEqual(150, weight)
+        packages = map(lambda x:x.package_id, scheduled)
+        self.assertIn('PKG1', packages)
+        self.assertIn('PKG2', packages)
+        self.assertIn('PKG3', packages)
+        self.assertNotIn('PKG4', packages)
+        self.assertNotIn('PKG5', packages)
         for p in scheduled:
             self.assertTrue(p.is_scheduled)
 
