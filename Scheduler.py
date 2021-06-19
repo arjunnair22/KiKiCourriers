@@ -115,7 +115,10 @@ def print_output_for_scheduled_packages(iteration):
 
 
 def calculate_time(distance: int):
-    return round(distance / KikiStore.get("speed"), 2)
+    try:
+        return round(distance / KikiStore.get("speed"), 2)
+    except ZeroDivisionError:
+        raise Exception('Speed cannot be zero')
 
 
 def will_require_waiting(iteration):

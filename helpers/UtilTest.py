@@ -146,11 +146,5 @@ class UtilTest(unittest.TestCase):
         self.assertEqual(len(scheduled), 1)
         self.assertIn(self.pack3, scheduled)
 
-
-
-
-
-
-
 if __name__ == '__main__':
     unittest.main()
